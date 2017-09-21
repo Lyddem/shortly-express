@@ -35,7 +35,7 @@ db.knex.schema.hasTable('clicks').then(function(exists) {
       console.log('Created Table', table);
     });
   }
-})
+});
 
 
 /************************************************************/
@@ -54,7 +54,7 @@ db.knex.schema.hasTable('users').then(function(exists) {
       console.log('Created Table', table);
     });
   }
-})
+});
 
 // Created user Table
 // db.knex.schema.hasTable('users').then(function(exists) {

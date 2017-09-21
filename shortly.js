@@ -11,11 +11,19 @@ var User = require('./app/models/user');
 var Links = require('./app/collections/links');
 var Link = require('./app/models/link');
 var Click = require('./app/models/click');
+// var session = require('express-sessions');
 
 var app = express();
 
 app.set('views', __dirname + '/views');
 app.set('view engine', 'ejs');
+
+// app.use(session({
+//   secret: 'secret',
+//   resave: false,
+//   saveUninitialized: true,
+// }));
+
 app.use(partials());
 // Parse JSON (uniform resource locators)
 app.use(bodyParser.json());
@@ -26,6 +34,10 @@ app.use(express.static(__dirname + '/public'));
 
 app.get('/',
   function(req, res) {
+    // console.log('session', req.session);
+    // if (req.session.loggedIn) {
+    //   res.render('index')
+    // }
     res.render('login');
   });
 
@@ -59,7 +71,6 @@ app.get('/links',
 app.post('/links',
   function(req, res) {
     var uri = req.body.url;
-
     if (!util.isValidUrl(uri)) {
       console.log('Not a valid url: ', uri);
       return res.sendStatus(404);
@@ -92,15 +103,33 @@ app.post('/links',
 // Write your authentication routes here
 /************************************************************/
 app.post('/login', function(req, res) {
-  //chek if username is in db
-  db.knex.select(req.body.username).from('users')
-    .then(function(data) {
-      console.log(data);
-    })
-    .catch(function(err) {
-      console.log('There was an err', err);
-    });
+  var username = req.body.username;
+  var password = req.body.password;
 
+  //chek if username is in db
+  // db.knex.select(req.body.username).from('users')
+  //   .then(function(data) {
+  //     console.log(data);
+  //   })
+  //   .catch(function(err) {
+  //     console.log('There was an err', err);
+  //   });
+
+  new User({username: req.body.username, password: req.body.password}).fetch()
+      .then(function(found) {
+        //check if name is found in db
+        if(!found){
+          res.redirect('/login');
+        } else {
+          bcrypt.compare(password, user.get('password'), function(err, match) {
+            if(match) {
+              util.createSession(req, res, user)
+            } else {
+              res.redirect('/login');
+            }
+          });
+        }
+      });
   // check hashed password with input password
   // const pw = req.body.password
   // Request hash from DB
@@ -113,12 +142,20 @@ app.post('/login', function(req, res) {
 });
 
 app.post('/signup', function(req, res) {
-  //post username to db
-  //store salted password to db
-  const salt = bycrypt.genSalt(10);
-  bcrypt.hash(pw, 10, function(err, hash) {
-    //post hash to db
-  });
+  new User({username: req.body.username, password: req.body.password}).fetch()
+  .then(function(found) {
+    //check if name is found in db
+    if(found){
+      console.log('user exists');
+      res.redirect('login');
+    } else {
+      var newUser = new User({username: req.body.username, password: req.body.password})
+      newUser.save()
+        .then(function(newUser){
+          util.createSession(req, req, newUser)
+        })
+    }
+  })
 });
 
 /************************************************************/
