@@ -94,11 +94,11 @@ app.post('/links',
 app.post('/login', function(req, res) {
   //chek if username is in db
   db.knex.select(req.body.username).from('users')
-    .then(function(data){
-      console.log(data)
+    .then(function(data) {
+      console.log(data);
     })
-    .catch(function(err){
-      console.log('There was an err', err)
+    .catch(function(err) {
+      console.log('There was an err', err);
     });
 
   // check hashed password with input password

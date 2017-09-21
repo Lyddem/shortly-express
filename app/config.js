@@ -35,25 +35,41 @@ db.knex.schema.hasTable('clicks').then(function(exists) {
       console.log('Created Table', table);
     });
   }
-});
+})
+
 
 /************************************************************/
 // Add additional schema definitions below
 /************************************************************/
 
 
-// Created user Table
-db.knex.schema.hastable('users').then(function(exists) {
-  if (!exist) {
-    db.knex.schema.createtable('users', function (user) {
+db.knex.schema.hasTable('users').then(function(exists) {
+  if (!exists) {
+    db.knex.schema.createTable('users', function (user) {
       user.increments('id').primary();
-      user.string('username', 20);
+      user.string('username', 50);
       user.string('password', 50);
+      // user.timestamps();
     }).then(function (table) {
-      console.log('Created user Table', table)
+      console.log('Created Table', table);
     });
   }
-});
+})
+
+// Created user Table
+// db.knex.schema.hasTable('users').then(function(exists) {
+//   if (!exists) {
+//     db.knex.schema.createTable('users', function (user) {
+//       user.increments('id').primary();
+//       user.string('username', 20);
+//       user.string('password', 50);
+//     }).then(function (table) {
+//       console.log('Created user Table', table);
+//     })
+//   }
+// }).catch(function(err) {
+//   console.log('There was an error adding user info to DB', err)
+// });
 
 module.exports = db;
 
