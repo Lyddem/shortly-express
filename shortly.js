@@ -41,8 +41,8 @@ app.get('/signup',
 
 app.get('/logout',
   function(req, res) {
-    res.render('/login');
-});
+    res.render('login');
+  });
 
 app.get('/create',
   function(req, res) {
@@ -91,27 +91,35 @@ app.post('/links',
 /************************************************************/
 // Write your authentication routes here
 /************************************************************/
-app.post('/login', function(req,res) {
+app.post('/login', function(req, res) {
   //chek if username is in db
-    // check hashed password with input password
-    // const pw = req.body
+  db.knex.select(req.body.username).from('users')
+    .then(function(data){
+      console.log(data)
+    })
+    .catch(function(err){
+      console.log('There was an err', err)
+    });
+
+  // check hashed password with input password
+  // const pw = req.body.password
   // Request hash from DB
-  bcrypt.compare(pw, hash, function(err, res) {
+  // bcrypt.compare(pw, hash, function(err, res) {
     // res === true
     // if true
-      // redirect to links page
-  })
-      // redirect to links page
+    // redirect to links page
+  // });
+  // redirect to links page
 });
 
-app.post('/signup', function(req,res) {
+app.post('/signup', function(req, res) {
   //post username to db
-   //store salted password to db
+  //store salted password to db
   const salt = bycrypt.genSalt(10);
   bcrypt.hash(pw, 10, function(err, hash) {
     //post hash to db
-  })
-})
+  });
+});
 
 /************************************************************/
 // Handle the wildcard route last - if all other routes fail
