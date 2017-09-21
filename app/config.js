@@ -6,6 +6,7 @@ var knex = require('knex')({
   },
   useNullAsDefault: true
 });
+
 var db = require('bookshelf')(knex);
 
 db.knex.schema.hasTable('urls').then(function(exists) {
@@ -41,4 +42,28 @@ db.knex.schema.hasTable('clicks').then(function(exists) {
 /************************************************************/
 
 
+// Created user Table
+db.knex.schema.hastable('users').then(function(exists) {
+  if (!exist) {
+    db.knex.schema.createtable('users', function (user) {
+      user.increments('id').primary();
+      user.string('username', 20);
+      user.string('password', 50);
+    }).then(function (table) {
+      console.log('Created user Table', table)
+    });
+  }
+});
+
 module.exports = db;
+
+
+
+
+
+
+
+
+
+
+
