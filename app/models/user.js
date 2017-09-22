@@ -7,27 +7,22 @@ var User = db.Model.extend({
   hasTimestamps: true,
 
   initialize: function() {
-    this.on('creating', function(model, attributes, options){
-      const saltRounds = 10;
-      const pw = req.body.password;
-      bcrypt.hash(pw, saltRounds, function(err, hash) {
-        console.log(hash)
-        console.log(model.attributes)
-        db.knex({password: hash}).into('users')
-      })
-      // Insert new Username
-      db.knex('users').insert({username: req.body.username})
-  });
-}
+    this.on('creating', this.hashPassword)
+  },
+
+  comparePassword: function(pwTry, callback) {
+    bcrypt.compare(pwTry, this.get('password'), function(err, matching){
+      callback(matching)
+    })
+  },
+
+  hashPassword: function() {
+    var cipher = Promise.promisify(bcrypt.hash);
+    return cipher(this.get('password'), null, null).bind(this)
+    .then(function(hash) {
+      this.set('password', hash);
+    });
+  }
 });
 
 module.exports = User;
-
-
-//signup function
-  //check db for username
-   //if not in db, hash pw and store in db
-
-//login function
-  //check if username is in db
-    // if so hash pw and compare to db hash

@@ -2,8 +2,6 @@ var express = require('express');
 var util = require('./lib/utility');
 var partials = require('express-partials');
 var bodyParser = require('body-parser');
-var bcrypt = require('bcrypt');
-
 
 var db = require('./app/config');
 var Users = require('./app/collections/users');
@@ -11,18 +9,12 @@ var User = require('./app/models/user');
 var Links = require('./app/collections/links');
 var Link = require('./app/models/link');
 var Click = require('./app/models/click');
-// var session = require('express-sessions');
+var session = require('express-session');
 
 var app = express();
 
 app.set('views', __dirname + '/views');
 app.set('view engine', 'ejs');
-
-// app.use(session({
-//   secret: 'secret',
-//   resave: false,
-//   saveUninitialized: true,
-// }));
 
 app.use(partials());
 // Parse JSON (uniform resource locators)
@@ -31,14 +23,15 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(__dirname + '/public'));
 
+app.use(session({
+  secret: 'secret',
+  resave: false,
+  saveUninitialized: true
+}));
 
-app.get('/',
+app.get('/', util.checkUser,
   function(req, res) {
-    // console.log('session', req.session);
-    // if (req.session.loggedIn) {
-    //   res.render('index')
-    // }
-    res.render('login');
+    res.render('index');
   });
 
 app.get('/login',
@@ -53,22 +46,25 @@ app.get('/signup',
 
 app.get('/logout',
   function(req, res) {
-    res.render('login');
+    req.session.destroy(function() {
+      res.render('login');
+    });
   });
 
-app.get('/create',
+app.get('/create', util.checkUser,
   function(req, res) {
     res.render('index');
   });
 
-app.get('/links',
+app.get('/links', util.checkUser,
   function(req, res) {
+    var uro = req.body.url
     Links.reset().fetch().then(function(links) {
       res.status(200).send(links.models);
     });
   });
 
-app.post('/links',
+app.post('/links', util.checkUser,
   function(req, res) {
     var uri = req.body.url;
     if (!util.isValidUrl(uri)) {
@@ -85,7 +81,6 @@ app.post('/links',
             console.log('Error reading URL heading: ', err);
             return res.sendStatus(404);
           }
-
           Links.create({
             url: uri,
             title: title,
@@ -106,30 +101,21 @@ app.post('/login', function(req, res) {
   var username = req.body.username;
   var password = req.body.password;
 
-  //chek if username is in db
-  // db.knex.select(req.body.username).from('users')
-  //   .then(function(data) {
-  //     console.log(data);
-  //   })
-  //   .catch(function(err) {
-  //     console.log('There was an err', err);
-  //   });
-
-  new User({username: req.body.username, password: req.body.password}).fetch()
-      .then(function(found) {
-        //check if name is found in db
-        if(!found){
-          res.redirect('/login');
-        } else {
-          bcrypt.compare(password, user.get('password'), function(err, match) {
-            if(match) {
-              util.createSession(req, res, user)
-            } else {
-              res.redirect('/login');
-            }
-          });
-        }
-      });
+  new User({username: username})
+    .fetch()
+    .then(function(user) {
+      if (!user) {
+        res.redirect('/login');
+      } else {
+        user.comparePassword(password, function(match) {
+          if (match) {
+            util.createSession(req, res, user);
+          } else {
+            res.redirect('/login');
+          }
+        })
+    }
+  })
   // check hashed password with input password
   // const pw = req.body.password
   // Request hash from DB
@@ -142,20 +128,28 @@ app.post('/login', function(req, res) {
 });
 
 app.post('/signup', function(req, res) {
-  new User({username: req.body.username, password: req.body.password}).fetch()
-  .then(function(found) {
+  var username = req.body.username;
+  var password = req.body.password;
+  // console.log('username, pw', username, password);
+
+  new User({username: username})
+  .fetch()
+  .then(function(user) {
     //check if name is found in db
-    if(found){
-      console.log('user exists');
-      res.redirect('login');
-    } else {
-      var newUser = new User({username: req.body.username, password: req.body.password})
-      newUser.save()
+    if (!user){
+      console.log('User not found')
+      var newUser = new User({
+        username: username,
+        password: password
+      }).save()
         .then(function(newUser){
-          util.createSession(req, req, newUser)
-        })
+          util.createSession(req, res, newUser);
+        });
+    } else {
+      console.log('Username taken. Please enter new username.')
+      res.redirect('/signup')
     }
-  })
+  });
 });
 
 /************************************************************/
